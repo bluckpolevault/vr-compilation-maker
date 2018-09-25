@@ -1,0 +1,31 @@
+#! /usr/bin/env python3
+import argparse
+import pathlib
+import sys
+
+import util
+import screens
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('cmd')
+    parser.add_argument('filename', type=pathlib.Path)
+    args = parser.parse_args()
+
+    rating = int(args.cmd)
+    db = util.get_db()
+
+    row = screens.get_rating(args.filename)
+    if row:
+        db.execute('update thumbnail set rating=? where id=?', (rating, row['id']))
+    else:
+        movie_id = util.get_movie_id(args.filename)
+        db.execute('insert into thumbnail (movie_id, filename, rating) values (?, ?, ?)',
+                   (movie_id, args.filename.name, rating))
+    db.commit()
+    print('SUCCESS: added rating {} for {} to db'.format(args.cmd, args.filename))
+
+
+if __name__ == '__main__':
+    sys.exit(main())
